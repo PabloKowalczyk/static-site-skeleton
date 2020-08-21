@@ -1,0 +1,21 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
+    App\:
+        resource: '../src/*'
+        exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,CacheKernel,Kernel.php}'
+        bind:
+            bool $isDebug: '%kernel.debug%'
+
+    App\Controller\:
+        resource: '../src/Controller'
+        public: true
+
+    voku\helper\HtmlMinInterface:
+        factory: ['@App\Factory\HtmlMinFactory', 'create']
+
+    App\MenuBuilder\MainMenuBuilder:
+        tags:
+            - { name: knp_menu.menu_builder, method: create, alias: main }

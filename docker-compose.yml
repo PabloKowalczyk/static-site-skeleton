@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+    app:
+        build:
+            context: .
+            dockerfile: ./docker/php/Dockerfile
+        volumes:
+            - .:/var/www/html:rw
+            - ./docker/php/dev_php.ini:/usr/local/etc/php/conf.d/z-99-dev-php.ini:ro
+        working_dir: /var/www/html
+        stop_grace_period: 1s
+        ports:
+            - 8301:80
+
+    php_builder:
+        build:
+            context: .
+            dockerfile: ./docker/php/Dockerfile
+        volumes:
+            - .:/var/www/html:rw
+        user: www-data
+        working_dir: /var/www/html
+        command: >
+            sh -c "
+                composer install -o  --prefer-dist --no-interaction --no-suggest
+            "
+
+    node_builder:
+        image: node:10.22-alpine
+        working_dir: /app
+        user: node
+        command: sh -c "
+                yarn install && yarn encore dev
+            "
+        volumes:
+            - .:/app

@@ -1,0 +1,35 @@
+{% import 'macros/critical-css.html.twig' as criticalCss %}
+
+<!doctype html>
+<html lang="{{ app.request.locale }}">
+
+    <head>
+        <meta charset="utf-8">
+        <title>{% block title %}Awesome site{% endblock %}</title>
+
+        {% block critical_css %}
+            {{ criticalCss.fromWebpackEntry('app') }}
+        {% endblock %}
+
+        {% block stylesheets %}{% endblock %}
+    </head>
+
+    <body>
+
+        <nav class="nav-main">
+            {{ knp_menu_render('main', {'currentClass': 'nav-main__menu-item--active', 'ancestorClass': 'nav-main__menu-item--active'}) }}
+        </nav>
+
+        <main>
+            {% block body %}{% endblock %}
+        </main>
+
+        {% block javascripts %}
+            {% for file in encore_entry_js_files('app') %}
+                <script defer src="{{ file }}"></script>
+            {% endfor %}
+        {% endblock %}
+
+    </body>
+
+</html>

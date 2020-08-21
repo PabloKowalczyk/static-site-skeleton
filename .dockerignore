@@ -1,0 +1,17 @@
+*
+# Frontend
+!webpack.config.js
+!package.json
+!yarn.lock
+!assets
+
+# Backend
+!bin
+!config
+!public
+!src
+!templates
+!composer.json
+!composer.lock
+!.env
+!docker/deploy/.env.local

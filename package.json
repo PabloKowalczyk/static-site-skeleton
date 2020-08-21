@@ -1,0 +1,31 @@
+{
+    "devDependencies": {
+        "@symfony/webpack-encore": "^0.30",
+        "core-js": "^3.0.0",
+        "node-sass": "^4.13.1",
+        "regenerator-runtime": "^0.13.2",
+        "sass-loader": "^8.0"
+    },
+    "license": "UNLICENSED",
+    "private": true,
+    "scripts": {
+        "dev-server": "encore dev-server",
+        "dev": "encore dev",
+        "watch": "encore dev --watch",
+        "build": "encore production --progress"
+    },
+    "browserslist": [
+        "Firefox ESR",
+        "last 2 firefox versions",
+        "last 2 chrome versions",
+        "last 2 edge versions",
+        "last 2 opera versions",
+        "last 2 safari versions",
+        "last 2 op_mob versions",
+        "last 2 and_chr versions",
+        "last 2 and_ff versions",
+        "last 2 android versions",
+        "last 2 ios_saf versions",
+        "not dead"
+    ]
+}

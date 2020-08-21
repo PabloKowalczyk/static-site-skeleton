@@ -1,0 +1,15 @@
+{% extends 'layout.html.twig' %}
+
+{% import 'macros/critical-css.html.twig' as criticalCss %}
+
+{% block title %} Homepage | {{ parent() }}{% endblock %}
+
+{% block critical_css %}
+    {{ parent() }}
+
+    {{ criticalCss.fromWebpackEntry('homepage') }}
+{% endblock %}
+
+{% block body %}
+    <h1>Hello world!</h1>
+{% endblock %}

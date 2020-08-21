@@ -1,0 +1,133 @@
+-   name: "Prepare artifact"
+    hosts: localhost
+    gather_facts: false
+    connection: local
+    vars:
+        build_base_directory: "/tmp/awesome-site-deploy"
+        repo_url: ""
+
+    tasks:
+      - name: Register date variable
+        shell: date +%Y_%m_%d_%H_%M_%S
+        register: date
+
+      - name: "Set build directory"
+        set_fact: "build_directory={{ build_base_directory }}/{{ date.stdout }}"
+
+      - debug: var=build_directory
+
+      - name: "Set artifact path"
+        set_fact: "artifact_path={{ build_directory }}/haccp-deploy.tar.bz2"
+
+      - debug: "var=artifact_path"
+
+      - name: "Create temp deploy directory"
+        file:
+            path: "{{ build_base_directory }}"
+            state: directory
+            mode: '0775'
+
+      - name: "Git clone"
+        git:
+            repo: '{{ repo_url }}'
+            version: "master"
+            dest: "{{ build_directory }}"
+            depth: 1
+
+      - name: "Register commit's hash variable"
+        shell:
+            cmd: "git rev-parse --short HEAD"
+            chdir: "{{ build_directory }}"
+        register: commit_hash
+
+      - name: Register timestamp variable
+        shell: date +%s
+        register: timestamp
+
+      - name: "Copy .env.local file"
+        copy:
+            src: ./.env.local
+            dest: "{{ build_directory }}/docker/deploy/.env.local"
+
+      - name: "Build app image"
+        shell:
+            cmd: "docker build -t haccp-deploy:latest -f docker/deploy/Dockerfile --target artifact --compress ."
+            chdir: "{{ build_directory }}"
+
+      - name: "Create temp docker image"
+        shell:
+            cmd: "docker create -ti --name tmp_haccp_deploy haccp-deploy:latest bash"
+
+      - name: "Copy artifact to local"
+        shell:
+            cmd: "docker cp tmp_haccp_deploy:/haccp-deploy.tar.bz2 {{ artifact_path }}"
+
+      - name: "Remove temp docker image"
+        shell:
+            cmd: "docker rm -f tmp_haccp_deploy"
+
+-   name: "Deploy artifact"
+    hosts: webserver
+    gather_facts: false
+    vars:
+        app_base_path: ""
+        deploy_path: "{{ app_base_path }}/tmp_current"
+        current_path: "{{ app_base_path }}/current"
+        old_current_path: "{{ app_base_path }}/old_current"
+        artifact_server_path: "{{ app_base_path }}/artifact.tar.bz2"
+    tasks:
+        - name: "Set localhost vars"
+          set_fact:
+              timestamp: "{{ hostvars['localhost'].timestamp.stdout }}"
+              commit_hash: "{{ hostvars['localhost'].commit_hash.stdout }}"
+              build_directory: "{{ hostvars['localhost'].build_directory }}"
+              artifact_local_path: "{{ hostvars['localhost'].artifact_path }}"
+
+        - name: "Debugging localhost vars"
+          debug:
+              msg:
+                - "Commit hash: {{ commit_hash }}"
+                - "Timestamp: {{ timestamp }}"
+                - "Build directory: {{ build_directory }}"
+                - "Artifact local path: {{ artifact_local_path }}"
+
+        - name: "Create deploy directory"
+          file:
+              path: "{{ deploy_path }}"
+              state: directory
+              mode: '0775'
+
+        - name: "Rsync artifact"
+          synchronize:
+              src: "{{ artifact_local_path }}"
+              dest: "{{ artifact_server_path }}"
+
+        - name: "Unpack artifact"
+          shell:
+              cmd: "tar -xf {{ artifact_server_path }} -C {{ deploy_path }}"
+              warn: false
+
+        - name: "Create a symlinks"
+          file:
+              src: "{{ app_base_path }}/log"
+              dest: "{{ deploy_path }}/var/log"
+              state: link
+              force: true
+
+        - name: "Move files"
+          shell:
+              cmd: "mv -f {{ item.src }} {{ item.dest }}"
+          loop:
+              - { src: "{{ current_path }}", dest: "{{ old_current_path }}" }
+              - { src: "{{ deploy_path }}", dest: "{{ current_path }}" }
+
+        - name: "Clear old deploy path"
+          file:
+              state: absent
+              path: "{{ old_current_path }}"
+
+        - name: "Clear local temp path"
+          file:
+            state: absent
+            path: "{{ build_directory }}"
+          delegate_to: 127.0.0.1

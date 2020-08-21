@@ -1,0 +1,6 @@
+index:
+    path: /
+    controller: App\Controller\TemplateAction
+    methods: GET
+    defaults:
+        template: 'pages/index.html.twig'

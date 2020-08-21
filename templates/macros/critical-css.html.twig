@@ -1,0 +1,7 @@
+{% macro fromWebpackEntry(name) %}
+    {% for file in encore_entry_css_files(name) %}
+        <style>
+            {{ file_source(public_path ~ file)|raw }}
+        </style>
+    {% endfor %}
+{% endmacro %}
